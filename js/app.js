@@ -2,6 +2,9 @@
 imgs array is updated using ajax from imgur, indexes less than used_no have been displayed
 and still req_no of images are needed for the screen.
 'end' is true when appEnd div containing 'End of images' have been displayed.
+
+All the Boxes and placeholders required are loaded initially and
+Images loads only to scrolled positions also reflected in console 
 */
 var imgs=new Array();
 var used_no=0,req_no=0;
@@ -17,18 +20,6 @@ var config={
 /*
 start of imgur specific functions
 */
-/*
-for imgur given a url say http://i.xyz.jpg then its thumbnail(160px*160px) is found by appending image file name with 't'
-i.e. thumbnail is at http://i.xyzt.jpg
-*/
-var getThumb=function(url){
- /* if(url[url.lastIndexOf('.')-1]!='h'){//its imgur exception some times it by default sends thumbnails
-      url=url.substring(0, url.lastIndexOf('.')) + "t" + url.substring(url.lastIndexOf('.'), url.length);
-  }else {
-      url=url.substring(0, url.lastIndexOf('.')-1) + "t" + url.substring(url.lastIndexOf('.'), url.length);
-  }*/
-  return url;
-}
 /*
 cbArray contains one object for each ajax call. object it containes is named as:
 cb followed by an unique id indentifying that ajax call.
@@ -72,7 +63,7 @@ function getImgList(config, callback) {
             for(x of data.data){
                 if(!x.is_album){
                   var img={};
-                  img.url=getThumb(x.link);
+                  img.url=x.link;
                   img.height=160;
                   img.width=160;
                   imgs.push(img);
@@ -82,7 +73,7 @@ function getImgList(config, callback) {
                   getAlbumImg(x.id,function(album_data){
                       for(imgData of album_data.data.images){
                           var img={};
-                          img.url=getThumb(imgData.link);
+                          img.url=imgData.link;
                           img.height=160;
                           img.width=160;
                           imgs.push(img);
@@ -96,6 +87,12 @@ function getImgList(config, callback) {
       };
       request.send(null);
 };
+
+
+/*
+End of imgur Specific functions
+*/
+
 /*
 checkEnd determines if all images source have been displayed.
 it sees all ajax call status in cbArray and if all have ended displays appEnd div.
@@ -114,15 +111,11 @@ var checkEnd=function(){
     '<br><div id="appEnd"><p>End Of Images</p></div>';
   }
 }
-/*
-End of imgur Specific functions
-*/
 
 /*
 addScreen function is fired on Event of scrolling. it calculates how many new images are to be inserted.
 */
 var addScreen=function(){
-  console.log("Scrolled");
   var elem = document.getElementById("mainApp");
   var w=parseInt(window.getComputedStyle(elem,null).getPropertyValue("width"));
   if(window.pageYOffset>prevScroll){
@@ -132,6 +125,9 @@ var addScreen=function(){
   }
 };
 
+/*
+  putImg Starts loading the image according to demand
+*/
 
 var putImg=function(img,n){
   var loadingImg=new Image();
@@ -140,8 +136,6 @@ var putImg=function(img,n){
   loadingImg.onload = function(){
     console.log("loaded: img"+n);
     document.getElementById("img"+n).setAttribute("src",this.src);
-    document.getElementById("img"+n).setAttribute("height",img.height);
-    document.getElementById("img"+n).setAttribute("width",img.width);
   };
 };
 /*
@@ -158,7 +152,9 @@ var dispImg=function(){
   };
   checkEnd();
 };
-/* This function can be modified to get the no of images from database and then stock can be set*/
+/* 
+  This function can be modified to get the no of images from database and then stock can be set
+*/
 var setStock=function(callback){
   stock=200;
   callback();
@@ -179,8 +175,10 @@ var screenInit=function(){
       document.getElementById("mainApp").innerHTML +='<a><img src="" height="'+
       config.imgWidth+'" width="'+config.imgHeight+'" class="img_holder" id="img'+i+'"></a>';
     }
-    getImgList(config,dispImg); //this method gets the metadata [height,width and url]
+    /*
+      get list of images from imgur,dispImg is callback
+    */
+    getImgList(config,dispImg);
   });
 };
 screenInit();
-//get list of images from imgur,dispImg is callback
