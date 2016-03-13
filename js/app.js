@@ -176,7 +176,7 @@ i.e imgs.length shows no of ajax request
 
 var dispImg=function(){
 
-  if(Loader && (imgs.length > stock)){
+  if(Loader && (imgs.length >= stock)){
     document.getElementById("Loader").remove();
     Loader = false;
     screenInit();
