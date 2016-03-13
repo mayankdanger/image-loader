@@ -15,7 +15,7 @@ Procedure:Following is the procedural flow, See issues for their status <br>
 5)see for scroll event <br>
 6)on scroll calculate no of images to be added and repeat step 2,3,4 <br>
 
-Flaws which are removed
-1) maintain ratio of the image
-2) a page loader is also there which signifies the all the ajax requests(200 requests for this case) are completed
-3)on clicking on image original image shows
+Flaws which are removed <br>
+1) maintain ratio of the image <br>
+2) a page loader is also there which signifies the all the ajax requests(200 requests for this case) are completed <br>
+3)on clicking on image original image shows <br>
