@@ -1,9 +1,13 @@
 @charset "utf-8";
 /* CSS Document */
+
+#Loader{
+  height: 600px;
+  background: url(loading.gif) 50% no-repeat;
+}
+
 #mainApp{
-  overflow: auto scroll;
   height: 700px;
-  max-width: 1024px;
   overflow-y: scroll;
 }
 #appEnd{

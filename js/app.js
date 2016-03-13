@@ -10,16 +10,32 @@ var imgs=new Array();
 var used_no=0,req_no=0;
 var prevScroll=0;
 var end=false;
+var Loader = true;
 
 var config={
   'Authorization': 'Client-ID 2caa3460222960b',
     'url': 'https://api.imgur.com/3/gallery/hot/',
-    'imgWidth':160,
-    'imgHeight':160
+    'maxWidth':250,
+    'maxHeight':160,
+    'avgHeight':160,
+    'avgWidth' :180
 };
 /*
 start of imgur specific functions
 */
+/*
+for imgur given a url say http://i.xyz.jpg then its thumbnail(160px*160px) is found by appending image file name with 't'
+i.e. thumbnail is at http://i.xyzt.jpg
+*/
+var getThumb=function(url){
+  if(url[url.lastIndexOf('.')-1]!='h'){//its imgur exception some times it by default sends thumbnails
+      url=url.substring(0, url.lastIndexOf('.')) + "t" + url.substring(url.lastIndexOf('.'), url.length);
+  }else {
+      url=url.substring(0, url.lastIndexOf('.')-1) + "t" + url.substring(url.lastIndexOf('.'), url.length);
+  }
+  return url;
+}
+
 /*
 cbArray contains one object for each ajax call. object it containes is named as:
 cb followed by an unique id indentifying that ajax call.
@@ -62,20 +78,30 @@ function getImgList(config, callback) {
             console.log(data);
             for(x of data.data){
                 if(!x.is_album){
-                  var img={};
-                  img.url=x.link;
-                  img.height=160;
-                  img.width=160;
+                  var img={'url':"",
+                  'actualUrl' : "",
+                  'height' : "",
+                  'width' : ""
+                };
+                  img.url=getThumb(x.link);
+                  img.actualUrl = x.link;
+                  img.height=x.height;
+                  img.width=x.width;
                   imgs.push(img);
                 }
                 else{
                   //if given link is of album not image then get details of album and then get all its image
                   getAlbumImg(x.id,function(album_data){
                       for(imgData of album_data.data.images){
-                          var img={};
-                          img.url=imgData.link;
-                          img.height=160;
-                          img.width=160;
+                          var img={'url':"",
+                            'turl' : "",
+                            'height' : "",
+                            'width' : ""
+                          };
+                          img.url=getThumb(imgData.link);
+                          img.actualUrl = imgData.link;
+                          img.height=imgData.height;
+                          img.width=imgData.width;
                           imgs.push(img);
                       }
                       callback();
@@ -105,6 +131,7 @@ var checkEnd=function(){
       break;
     }
   };
+
   if(fl&&(stock==used_no)&&(!end)){
     end=true;
     document.getElementById("mainApp").innerHTML +=
@@ -118,8 +145,8 @@ addScreen function is fired on Event of scrolling. it calculates how many new im
 var addScreen=function(){
   var elem = document.getElementById("mainApp");
   var w=parseInt(window.getComputedStyle(elem,null).getPropertyValue("width"));
-  if(window.pageYOffset>prevScroll){
-    req_no+=((window.pageYOffset-prevScroll)*w)/(config.imgWidth*config.imgHeight);
+  if(window.pageYOffset + 1300>prevScroll){
+    req_no+=((window.pageYOffset-prevScroll)*w)/(config.avgWidth*config.avgHeight);
     prevScroll=window.pageYOffset;
     dispImg();
   }
@@ -133,8 +160,9 @@ var putImg=function(img,n){
   var loadingImg=new Image();
   loadingImg.src=img.url;
   console.log("loading: img"+n);
+  document.getElementById("img"+n).className = "img_holder";
   loadingImg.onload = function(){
-    console.log("loaded: img"+n);
+   // console.log("loaded: img"+n);
     document.getElementById("img"+n).setAttribute("src",this.src);
   };
 };
@@ -144,12 +172,21 @@ checkEnd function is source specific and must be provided as per source.
 */
 
 var dispImg=function(){
-  for(var i=used_no;i<req_no;i++){
-    if(i<stock){
-      putImg(imgs[i],used_no);
-      ++used_no;
-    }
-  };
+
+  if(Loader && (imgs.length > 200)){
+    document.getElementById("Loader").remove();
+    Loader = false;
+    screenInit();
+  }
+
+  if(!Loader){
+    for(var i=used_no;i<req_no;i++){
+      if(i<stock){
+        putImg(imgs[i],used_no);
+        ++used_no;
+      }
+    };
+  }
   checkEnd();
 };
 /* 
@@ -161,6 +198,25 @@ var setStock=function(callback){
 };
 
 /*
+  Calculate image height and width to fit in 160 x 160
+  and maintain the ratio
+*/
+  
+var calculateSize = function(img){
+  var temp = {};
+  temp.height = config.maxHeight;
+  var ratio = img.height/config.maxHeight;
+  temp.width = img.width/ratio;
+  if(temp.width > config.maxWidth){
+    temp.width = config.maxWidth;
+    ratio = img.width/config.maxWidth;
+    temp.height = img.height/ratio;
+  }
+
+  return temp;
+}
+
+/*
 Intialises req_no i.e. no of images initially required for screen by taking width and height of conatiner 'mainApp'.
 sets the event onscroll on mainApp
 */
@@ -168,17 +224,24 @@ var screenInit=function(){
   var elem = document.getElementById("mainApp");
   var h=parseInt(window.getComputedStyle(elem,null).getPropertyValue("height"));
   var w=parseInt(window.getComputedStyle(elem,null).getPropertyValue("width"));
-  req_no=(h*w)/(config.imgHeight*config.imgWidth)+1;
+  req_no=(h*w)/(config.avgHeight*config.avgWidth)+1;
   document.getElementById("mainApp").setAttribute("onscroll","addScreen()");
   setStock(function(){
     for(var i=0;i<stock;i++){
-      document.getElementById("mainApp").innerHTML +='<a><img src="" height="'+
-      config.imgWidth+'" width="'+config.imgHeight+'" class="img_holder" id="img'+i+'"></a>';
+      var img = calculateSize(imgs[i]);
+      config.avgWidth = (config.avgWidth * i + img.width)/(i+1);
+      config.avgHeight = (config.avgHeight * i + img.height)/(i+1);
+
+      document.getElementById("mainApp").innerHTML +='<a href="'+imgs[i].actualUrl+'"><img src="" height="'+
+      img.height+'" width="'+img.width+'" id="img'+i+'"></a>';
     }
+  });
+  addScreen();
+};
+//screenInit();
+
+
     /*
       get list of images from imgur,dispImg is callback
     */
-    getImgList(config,dispImg);
-  });
-};
-screenInit();
+getImgList(config,dispImg);
