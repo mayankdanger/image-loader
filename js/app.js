@@ -3,8 +3,8 @@ imgs array is updated using ajax from imgur, indexes less than used_no have been
 and still req_no of images are needed for the screen.
 'end' is true when appEnd div containing 'End of images' have been displayed.
 
-All the Boxes and placeholders required are loaded initially and
-Images loads only to scrolled positions also reflected in console 
+All the Boxes required are loaded initially and
+Images start loads only to scrolled positions also reflected in console and by placeholders
 */
 var imgs=new Array();
 var used_no=0,req_no=0;
@@ -45,7 +45,9 @@ i.e. cb1={'status:true'},cb2={'status:true'},...
 */
 var cbArray={};
 var counter=0;
-var stock=0;
+var stock=200;
+
+
 var getAlbumImg=function(id,callback){
   var cbId=++counter;
   cbArray['cb'+cbId]={};
@@ -162,18 +164,19 @@ var putImg=function(img,n){
   console.log("loading: img"+n);
   document.getElementById("img"+n).className = "img_holder";
   loadingImg.onload = function(){
-   // console.log("loaded: img"+n);
     document.getElementById("img"+n).setAttribute("src",this.src);
   };
 };
 /*
 displays images. and check for End through 'checkEnd'.
 checkEnd function is source specific and must be provided as per source.
+this function works only when all ajax requests are completed
+i.e imgs.length shows no of ajax request
 */
 
 var dispImg=function(){
 
-  if(Loader && (imgs.length > 200)){
+  if(Loader && (imgs.length >= stock)){
     document.getElementById("Loader").remove();
     Loader = false;
     screenInit();
@@ -193,7 +196,6 @@ var dispImg=function(){
   This function can be modified to get the no of images from database and then stock can be set
 */
 var setStock=function(callback){
-  stock=200;
   callback();
 };
 
@@ -238,7 +240,6 @@ var screenInit=function(){
   });
   addScreen();
 };
-//screenInit();
 
 
     /*
